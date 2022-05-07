@@ -20,6 +20,21 @@ vim.api.nvim_set_keymap('n', '<leader>vimrc', '<cmd>e $MYVIMRC<CR>', options)
 -- Quickly open terminal
 vim.api.nvim_set_keymap('n', '<C-t>', '<cmd>split<CR><cmd>terminal<CR><C-w>j a', options)
 
+-- Format json with python3 module 
+vim.api.nvim_set_keymap('n', '<leader>js', '<cmd>%!python3 -m json.tool<CR>', options)
+
+-- XSoar upload new automation/yaml/playbook to xsoar
+vim.api.nvim_set_keymap('n', '<leader>xup', '<cmd>!demisto-sdk upload -i . --verbose<CR>', options)
+
+function pass_string_to_cli()
+    user = vim.fn.input("Command to run: ")
+    command = '"'.. user ..'"'
+    vim.cmd(':! demisto-sdk run -q ' .. command ..'')
+end
+
+-- Could be dope
+vim.api.nvim_set_keymap('n', '<leader>xec', '<cmd>lua pass_string_to_cli()<CR>', options)
+
 -- Go back to normal mode in terminal
 vim.api.nvim_set_keymap('t', '<C-n>', '<C-|><C-n>', options)
 
