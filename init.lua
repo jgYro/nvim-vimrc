@@ -67,6 +67,15 @@ return require('packer').startup(function()
 	-- Multi cursor
 	use 'mg979/vim-visual-multi'
 
+    -- Snippets
+    use 'hrsh7th/vim-vsnip'
+
+    -- Flutter support
+    use 'dart-lang/dart-vim-plugin'
+
+    -- Rust support
+    use 'simrat39/rust-tools.nvim'
+
 	--
 	--
 	--
@@ -118,30 +127,39 @@ return require('packer').startup(function()
     local cmp = require'cmp'
 
     cmp.setup({
-    snippet = {},
+        snippet = {
+            expand = function(args)
+                vim.fn["vsnip#anonymous"](args.body)
+            end,
+        },
     window = {
       -- completion = cmp.config.window.bordered(),
       -- documentation = cmp.config.window.bordered(),
     },
-    mapping = cmp.mapping.preset.insert({
-      ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-      ['<C-f>'] = cmp.mapping.scroll_docs(4),
-      ['<C-Space>'] = cmp.mapping.complete(),
-      ['<C-e>'] = cmp.mapping.abort(),
-      -- Accept currently selected item. 
-      -- Set `select` to `false` to confirm explicitly selected items
-      ['<CR>'] = cmp.mapping.confirm({ select = true }),
-    }),
+    mapping = {
+    ['<C-p>'] = cmp.mapping.select_prev_item(),
+    ['<C-n>'] = cmp.mapping.select_next_item(),
+    -- Add tab support
+    ['<S-Tab>'] = cmp.mapping.select_prev_item(),
+    ['<Tab>'] = cmp.mapping.select_next_item(),
+    ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+    ['<C-f>'] = cmp.mapping.scroll_docs(4),
+    ['<C-Space>'] = cmp.mapping.complete(),
+    ['<C-e>'] = cmp.mapping.close(),
+    ['<CR>'] = cmp.mapping.confirm({
+      behavior = cmp.ConfirmBehavior.Insert,
+      select = true,
+    })
+  },
     sources = cmp.config.sources({
       { name = 'nvim_lsp' },
-      -- { name = 'luasnip' }, -- For luasnip users.
-      -- { name = 'ultisnips' }, -- For ultisnips users.
-      -- { name = 'snippy' }, -- For snippy users.
-    }, {
+      { name = 'vsnip' },
+      { name = 'path' },
       { name = 'buffer' },
+
     })
     })
-    -- Use buffer source for `/`
+        -- Use buffer source for `/`
     cmp.setup.cmdline('/', {
     mapping = cmp.mapping.preset.cmdline(),
     sources = {
@@ -177,12 +195,52 @@ return require('packer').startup(function()
 
     -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
     require('lspconfig')['pyright'].setup {
-    capabilities = capabilities,
-    on_attach = on_attach
+	    capabilities = capabilities,
+	    on_attach = on_attach
+    }
+
+    require('lspconfig')['dartls'].setup {
+	    capabilities = capabilities, 
+	    on_attach = on_attach,
+        init_options = {
+          closingLabels = true,
+          flutterOutline = true,
+          onlyAnalyzeProjectsWithOpenFiles = true,
+          outline = true,
+          suggestFromUnimportedLibraries = true
+        },
     }
 
     require('lspconfig')['bashls'].setup {
-    capabilities = capabilities, on_attach = on_attach
+	    capabilities = capabilities, 
+	    on_attach = on_attach
     }
 
+    require'lspconfig'.rust_analyzer.setup {
+		tools = { 
+		    autoSetHints = true,
+		    hover_with_actions = true,
+		    inlay_hints = {
+			show_parameter_hints = false,
+			parameter_hints_prefix = "",
+			other_hints_prefix = "",
+		    },
+		},
+        ["rust-client"] = {
+                engine = "rust-analyzer",
+            },
+            settings = {
+                rust = {
+                    build_on_save = false,
+                    ["rust-analyzer"] = {
+                        completion = {
+                            addCallArgumentSnippets = false,
+                            addCallParenthesis = false,
+                        },
+                    },
+                },
+            },
+	    capabilities = capabilities, 
+	    on_attach = on_attach
+    }
 end)
