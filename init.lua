@@ -1,6 +1,9 @@
 -- Set VIM defaults
 vim.opt.relativenumber = true
 vim.opt.number = true
+vim.opt.swapfile = false
+vim.opt.termguicolors = true
+vim.opt.background = "dark"
 vim.opt.cursorline = true
 vim.opt.cursorcolumn = true
 vim.opt.tabstop = 4
@@ -13,6 +16,12 @@ options = { noremap = true }
 
 -- Use spacebar as leader key
 vim.g.mapleader = ' '
+
+-- LSP logs
+vim.api.nvim_set_keymap('n', '<leader>lsplog', '<cmd>lua vim.cmd(\'edit \'..vim.lsp.get_log_path())<CR>', options)
+
+-- Run dart program
+vim.api.nvim_set_keymap('n', '<leader>dart', '<cmd>:w<CR><cmd>!dart %<CR>', options)
 
 -- Quickly edit vimrc
 vim.api.nvim_set_keymap('n', '<leader>vimrc', '<cmd>e $MYVIMRC<CR>', options)
@@ -48,8 +57,25 @@ return require('packer').startup(function()
 	-- Package manager manages itself
 	use 'wbthomason/packer.nvim'
 
+    -- Colors
+    use 'folke/lsp-colors.nvim'
+
+    --Colorscheme
+    use 'ellisonleao/gruvbox.nvim'
+    vim.cmd([[colorscheme gruvbox]])
+
+
+    -- Comment stuff
+    use 'tpope/vim-commentary'
+
 	-- Treesitter
 	use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+	use 'nvim-treesitter/nvim-treesitter-textobjects'
+    use 'lewis6991/nvim-treesitter-context'
+	use 'nvim-treesitter/nvim-treesitter-refactor'
+	use 'nvim-treesitter/playground'
+    use 'p00f/nvim-ts-rainbow'
+    
 
 	-- Highlight matched information
 	use 'kevinhwang91/nvim-hlslens'
@@ -64,6 +90,9 @@ return require('packer').startup(function()
 	-- Easily delete, change and add surroundings in pairs
 	use 'tpope/vim-surround'
 
+    -- LSP Formatter
+    use "lukas-reineke/lsp-format.nvim"
+
 	-- Multi cursor
 	use 'mg979/vim-visual-multi'
 
@@ -71,7 +100,7 @@ return require('packer').startup(function()
     use 'hrsh7th/vim-vsnip'
 
     -- Flutter support
-    use 'dart-lang/dart-vim-plugin'
+    use {'akinsho/flutter-tools.nvim', requires = 'nvim-lua/plenary.nvim'}
 
     -- Rust support
     use 'simrat39/rust-tools.nvim'
@@ -87,6 +116,9 @@ return require('packer').startup(function()
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} }
     }
+    -- Telescope stuff
+    vim.api.nvim_set_keymap('n', '<leader>t', '<cmd>Telescope<cr>', options)
+
     -- List files in current directory
     vim.api.nvim_set_keymap('n', '<leader>ff', '<cmd>Telescope find_files<cr>', options)
 
@@ -177,12 +209,17 @@ return require('packer').startup(function()
     })
     })
 
+    -- LSP Formmatter
+    require("lsp-format").setup {}
+
+
     -- Setup lspconfig.
     local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
 
     -- on_attach for mapping keys only when the LSP attaches to the buffer
     local on_attach = function(client, bufnr)
-        vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.declaration()<CR>', options)
+        require "lsp-format".on_attach(client)
+        vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', options)
@@ -199,20 +236,18 @@ return require('packer').startup(function()
 	    on_attach = on_attach
     }
 
-    require('lspconfig')['dartls'].setup {
-	    capabilities = capabilities, 
-	    on_attach = on_attach,
-        init_options = {
-          closingLabels = true,
-          flutterOutline = true,
-          onlyAnalyzeProjectsWithOpenFiles = true,
-          outline = true,
-          suggestFromUnimportedLibraries = true
-        },
+    require("flutter-tools").setup{
+        lsp = {
+            on_attach = on_attach,
+            capabilities = capabilities
+        }
     }
 
     require('lspconfig')['bashls'].setup {
-	    capabilities = capabilities, 
+        lsp = {
+            autostart = true,
+        },
+	    capabilities = capabilities,
 	    on_attach = on_attach
     }
 
@@ -240,7 +275,50 @@ return require('packer').startup(function()
                     },
                 },
             },
-	    capabilities = capabilities, 
+	    capabilities = capabilities,
 	    on_attach = on_attach
     }
+    require'lspconfig'.sumneko_lua.setup {
+      settings = {
+        Lua = {
+          runtime = {
+            -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+            version = 'LuaJIT',
+          },
+          diagnostics = {
+            -- Get the language server to recognize the `vim` global
+            globals = {'vim'},
+          },
+          workspace = {
+            -- Make the server aware of Neovim runtime files
+            library = vim.api.nvim_get_runtime_file("", true),
+          },
+          -- Do not send telemetry data containing a randomized but unique identifier
+          telemetry = {
+            enable = false,
+          },
+        },
+      },
+    }
+    require'lspconfig'.vimls.setup{}
+    require'nvim-treesitter.configs'.setup {
+      ensure_installed = { "python", "lua", "rust", "dart", "bash" },
+
+      sync_install = true,
+
+      highlight = {
+
+        enable = true,
+        additional_vim_regex_highlighting = true,
+      },
+    rainbow = {
+        enable = true,
+        -- disable = { "jsx", "cpp" }, list of languages you want to disable the plugin for
+        extended_mode = true, -- Also highlight non-bracket delimiters like html tags, boolean or table: lang -> boolean
+        max_file_lines = nil, -- Do not enable for files with more than n lines, int
+        -- colors = {}, -- table of hex strings
+        -- termcolors = {} -- table of colour name strings
+      },
+    }
+
 end)
