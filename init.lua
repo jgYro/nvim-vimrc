@@ -23,6 +23,9 @@ vim.api.nvim_set_keymap('n', '<leader>lsplog', '<cmd>lua vim.cmd(\'edit \'..vim.
 -- Run dart program
 vim.api.nvim_set_keymap('n', '<leader>dart', '<cmd>:w<CR><cmd>!dart %<CR>', options)
 
+-- Run python program
+vim.api.nvim_set_keymap('n', '<leader>py', '<cmd>:w<CR><cmd>!python3 %<CR>', options)
+
 -- Quickly edit vimrc
 vim.api.nvim_set_keymap('n', '<leader>vimrc', '<cmd>e $MYVIMRC<CR>', options)
 
@@ -230,10 +233,18 @@ return require('packer').startup(function()
     end
 
 
-    -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
-    require('lspconfig')['pyright'].setup {
+    require('lspconfig')['pylsp'].setup {
 	    capabilities = capabilities,
-	    on_attach = on_attach
+	    on_attach = on_attach,
+        settings = {
+            pylsp = {
+                plugins = {
+                    jedi_completion = {
+                        include_params = true,
+                    }
+                }
+            }
+        }
     }
 
     require("flutter-tools").setup{
