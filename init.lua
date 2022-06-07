@@ -12,7 +12,17 @@ vim.opt.expandtab = true
 vim.opt.autoindent = true
 vim.opt.splitright = true
 vim.opt.splitbelow = true
+vim.g["far#enable_undo"] = 1
+vim.g["far#highlight_match"] = true
+vim.g["closetag_xhtml_filenames"] = '*.xhtml,*.jsx'
+vim.g["closetag_filetypes"] = 'html,xhtml,phtml'
+vim.g["closetag_xhtml_filetypes"] = 'xhtml,jsx'
+vim.g["closetag_emptyTags_caseSensitive"] = 1
+vim.g["closetag_shortcut"] = '>'
+vim.g["python3_host_prog"] = "/Library/Frameworks/Python.framework/Versions/3.10/bin/python3"
+
 options = { noremap = true }
+
 
 -- Use spacebar as leader key
 vim.g.mapleader = ' '
@@ -25,6 +35,9 @@ vim.api.nvim_set_keymap('n', '<leader>dart', '<cmd>:w<CR><cmd>!dart %<CR>', opti
 
 -- Run python program
 vim.api.nvim_set_keymap('n', '<leader>py', '<cmd>:w<CR><cmd>!python3 %<CR>', options)
+
+-- Run rust program
+vim.api.nvim_set_keymap('n', '<leader>rust', '<cmd>:w<CR><cmd>!cargo run % %<CR>', options)
 
 -- Quickly edit vimrc
 vim.api.nvim_set_keymap('n', '<leader>vimrc', '<cmd>e $MYVIMRC<CR>', options)
@@ -60,16 +73,48 @@ return require('packer').startup(function()
 	-- Package manager manages itself
 	use 'wbthomason/packer.nvim'
 
+    -- Web Devicons
+    use 'ryanoasis/vim-devicons'
+
+    -- Neorg
+    use { "nvim-neorg/neorg",
+    config = function()
+    end,
+    requires = "nvim-lua/plenary.nvim"
+}
+
+    -- Better find and replace
+    use 'brooth/far.vim'
+    vim.api.nvim_set_keymap('n', '<leader>f/', '<cmd>Farf<CR>', options)
+    vim.api.nvim_set_keymap('v', '<leader>f/', '<cmd>Far<CR>', options)
+    vim.api.nvim_set_keymap('n', '<leader>fr/', '<cmd>Farr<CR>', options)
+    vim.api.nvim_set_keymap('v', '<leader>fr/', '<cmd>:\'<,\'>Far<CR>', options)
+
     -- Colors
     use 'folke/lsp-colors.nvim'
 
-    --Colorscheme
+    -- HTML tags
+    use 'alvan/vim-closetag'
+
+    -- Ultisnips
+    use 'SirVer/ultisnips'
+    use 'honza/vim-snippets'
+
+    -- Colorscheme
     use 'ellisonleao/gruvbox.nvim'
     vim.cmd([[colorscheme gruvbox]])
 
+    -- Copilot
+    use 'github/copilot.vim'
+
+    -- Fzf for Telescope
+    use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
 
     -- Comment stuff
     use 'tpope/vim-commentary'
+
+    -- flutter
+    use 'akinsho/flutter-tools.nvim'
 
 	-- Treesitter
 	use {'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
@@ -102,9 +147,6 @@ return require('packer').startup(function()
     -- Snippets
     use 'hrsh7th/vim-vsnip'
 
-    -- Flutter support
-    use {'akinsho/flutter-tools.nvim', requires = 'nvim-lua/plenary.nvim'}
-
     -- Rust support
     use 'simrat39/rust-tools.nvim'
 
@@ -115,10 +157,16 @@ return require('packer').startup(function()
 	--
 	--
 	--
+    use 'nvim-telescope/telescope-media-files.nvim'
+    use 'fhill2/telescope-ultisnips.nvim'
     use {
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} }
     }
+
+    require('telescope').load_extension('fzf')
+    require('telescope').load_extension('ultisnips')
+
     -- Telescope stuff
     vim.api.nvim_set_keymap('n', '<leader>t', '<cmd>Telescope<cr>', options)
 
@@ -218,11 +266,14 @@ return require('packer').startup(function()
 
     -- Setup lspconfig.
     local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+    capabilities.textDocument.completion.completionItem.snippetSupport = true
+
 
     -- on_attach for mapping keys only when the LSP attaches to the buffer
     local on_attach = function(client, bufnr)
         require "lsp-format".on_attach(client)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', options)
+        vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gv', '<cmd>vsplit<CR><cmd>lua vim.lsp.buf.definition()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', options)
         vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', options)
@@ -331,5 +382,46 @@ return require('packer').startup(function()
         -- termcolors = {} -- table of colour name strings
       },
     }
+    require'lspconfig'.tailwindcss.setup{
+        on_attach = on_attach,
+        capabilities = capabilities,
+        init_options = { userLanguages = { htmldjango = "html" }},
+        settings = {
+	    tailwindCSS = {
+		    experimental = {
+			    classRegex = {
+                    "tailwind\\('([^)]*)\\')", "'([^']*)'"
+		    	    },
+		    },
+	    },
+    },
+    }
+    require'lspconfig'.html.setup{
+        on_attach = on_attach,
+        capabilities = capabilities
+    }
+    require'lspconfig'.dartls.setup{
+        on_attach = on_attach,
+        capabilities = capabilities
+    }
+    require('neorg').setup {
+    load = {
+        ["core.defaults"] = {},
+        ["core.integrations.nvim-cmp"] = {},
+        ["core.integrations.treesitter"] = {},
+        ["core.gtd.ui"] = {},
+        ["core.gtd.helpers"] = {},
+        ["core.gtd.queries"] = {},
+        ["core.norg.dirman"] = {
+                    config = {
+                        workspaces = {
+                            work = "~/notes/work",
+                            home = "~/notes/home",
+                        }
+                    }
+                }
+            }
+        }
+
 
 end)
