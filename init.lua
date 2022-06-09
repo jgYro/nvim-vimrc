@@ -96,6 +96,9 @@ return require('packer').startup(function()
     -- HTML tags
     use 'alvan/vim-closetag'
 
+    -- Bookmarks
+    use 'dhruvmanila/telescope-bookmarks.nvim'
+
     -- Ultisnips
     use 'SirVer/ultisnips'
     use 'honza/vim-snippets'
@@ -110,8 +113,14 @@ return require('packer').startup(function()
     -- Fzf for Telescope
     use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
 
+    -- File browser for Telescope
+    use "nvim-telescope/telescope-file-browser.nvim"
+
     -- Comment stuff
     use 'tpope/vim-commentary'
+
+    -- Git 
+    use 'kdheepak/lazygit.nvim'
 
     -- flutter
     use 'akinsho/flutter-tools.nvim'
@@ -161,11 +170,10 @@ return require('packer').startup(function()
     use 'fhill2/telescope-ultisnips.nvim'
     use {
         'nvim-telescope/telescope.nvim',
-        requires = { {'nvim-lua/plenary.nvim'} }
+        requires = { {'nvim-lua/plenary.nvim'} },
     }
 
-    require('telescope').load_extension('fzf')
-    require('telescope').load_extension('ultisnips')
+
 
     -- Telescope stuff
     vim.api.nvim_set_keymap('n', '<leader>t', '<cmd>Telescope<cr>', options)
@@ -187,6 +195,44 @@ return require('packer').startup(function()
 
     -- List LSP references for word under the cursor
     vim.api.nvim_set_keymap('n', '<leader>fr', '<cmd>Telescope lsp_references<cr>', options)
+
+    -- File browser
+    vim.api.nvim_set_keymap('n', '<leader>fb', '<cmd>Telescope file_browser<cr>', options)
+    
+    -- lazygit
+    vim.api.nvim_set_keymap('n', '<leader>lg', '<cmd>LazyGit<cr>', options)
+
+    -- Bookmakrs
+    vim.api.nvim_set_keymap('n', '<leader>bm', '<cmd>Telescope bookmarks<cr>', options)
+
+    require('telescope').setup {
+      extensions = {
+        bookmarks = {
+          -- Available: 'brave', 'buku', 'chrome', 'chrome_beta', 'edge', 'safari', 'firefox', 'vivaldi'
+          selected_browser = 'chrome',
+
+          -- Either provide a shell command to open the URL
+          url_open_command = 'open',
+
+          -- Or provide the plugin name which is already installed
+          -- Available: 'vim_external', 'open_browser'
+          url_open_plugin = nil,
+
+          -- Show the full path to the bookmark instead of just the bookmark name
+          full_path = true,
+
+          -- Provide a custom profile name for Firefox
+          firefox_profile_name = nil,
+        },
+      }
+    }
+
+    require('telescope').load_extension('bookmarks')
+    require('telescope').load_extension('fzf')
+    require('telescope').load_extension('ultisnips')
+    require('telescope').load_extension('file_browser')
+    require('telescope').load_extension('lazygit')
+    require('lazygit.utils').project_root_dir()
 
 	--
 	--
@@ -396,14 +442,12 @@ return require('packer').startup(function()
 	    },
     },
     }
+
     require'lspconfig'.html.setup{
         on_attach = on_attach,
         capabilities = capabilities
     }
-    require'lspconfig'.dartls.setup{
-        on_attach = on_attach,
-        capabilities = capabilities
-    }
+
     require('neorg').setup {
     load = {
         ["core.defaults"] = {},
