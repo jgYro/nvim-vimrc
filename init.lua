@@ -27,6 +27,10 @@ options = { noremap = true }
 -- Use spacebar as leader key
 vim.g.mapleader = ' '
 
+-- Quickfix stuff
+vim.api.nvim_set_keymap('n', '<leader>j', '<cmd>cnext<CR>', options)
+vim.api.nvim_set_keymap('n', '<leader>k', '<cmd>cprevious<CR>', options)
+
 -- LSP logs
 vim.api.nvim_set_keymap('n', '<leader>lsplog', '<cmd>lua vim.cmd(\'edit \'..vim.lsp.get_log_path())<CR>', options)
 
@@ -76,6 +80,18 @@ return require('packer').startup(function()
     -- Web Devicons
     use 'ryanoasis/vim-devicons'
 
+    -- Lua
+    use {
+      "folke/zen-mode.nvim",
+      config = function()
+        require("zen-mode").setup {
+          -- your configuration comes here
+          -- or leave it empty to use the default settings
+          -- refer to the configuration section below
+        }
+      end
+    }
+
     -- Neorg
     use { "nvim-neorg/neorg",
     config = function()
@@ -108,7 +124,7 @@ return require('packer').startup(function()
     vim.cmd([[colorscheme gruvbox]])
 
     -- Copilot
-    use 'github/copilot.vim'
+    --use 'github/copilot.vim'
 
     -- Fzf for Telescope
     use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
@@ -451,6 +467,16 @@ return require('packer').startup(function()
     require('neorg').setup {
     load = {
         ["core.defaults"] = {},
+        ["core.queries.native"] = {},
+        ["core.ui"] = {},
+        ["core.mode"] = {},
+        ["core.keybinds"] = {},
+        ["core.neorgcmd"] = {},
+        ["core.presenter"] = {
+            config = {
+                zen_mode = 'zen-mode'
+            }
+        },
         ["core.integrations.nvim-cmp"] = {},
         ["core.integrations.treesitter"] = {},
         ["core.gtd.ui"] = {},
